@@ -52,19 +52,24 @@ class TkinterDisplay:
         if image.size != (self.width, self.height):
             image = image.resize((self.width, self.height))
             
-        self.tk_img_ref = ImageTk.PhotoImage(image)
-        self.canvas.create_image(0, 0, image=self.tk_img_ref, anchor="nw")
-        
-        # Handle GUI events
         try:
+            # Explicitly pass master to avoid "no default root" error if multiple threads/contexts exist
+            self.tk_img_ref = ImageTk.PhotoImage(image, master=self.root)
+            self.canvas.create_image(0, 0, image=self.tk_img_ref, anchor="nw")
+            
+            # Handle GUI events
             self.root.update_idletasks()
             self.root.update()
         except tk.TclError:
-            pass # Window closed
-
+            print("Window closed. Stopping.")
+            self.root = None
+            
     def close(self):
         if self.root:
-            self.root.destroy()
+            try:
+                self.root.destroy()
+            except tk.TclError:
+                pass
             self.root = None
     
 # ----------------------------
@@ -136,7 +141,9 @@ class PiLCDApp:
 
     def input_loop(self):
         print("\n--- Command Interface ---")
-        print("Type 'love', 'sleep', 'happy', 'angry' etc. to trigger animations.")
+        # Get list of simplified commands
+        cmds = ["love", "sleep", "happy", "angry", "hate", "blush", "focus", "phone", "silence", "idle"]
+        print(f"Available commands: {', '.join(cmds)}")
         print("Type 'quit' to exit.")
         while self.running:
             try:
