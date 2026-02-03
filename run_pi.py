@@ -13,12 +13,12 @@ try:
 except ImportError:
     print("Raspberry Pi hardware driver not found. Using Tkinter simulation.")
     HARDWARE_AVAILABLE = False
-    try:
-        import tkinter as tk
-        from PIL import ImageTk
-    except ImportError:
-        print("Tkinter not found. Running in headless console mode.")
-        tk = None
+
+try:
+    import tkinter as tk
+    from PIL import ImageTk
+except ImportError:
+    tk = None
 
 class TkinterDisplay:
     """Simulates the SPI Display using a Tkinter window"""
