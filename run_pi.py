@@ -100,7 +100,7 @@ IDLE_FACE = "eyes"  # Default fallback
 # ----------------------------
 # Asset Loading
 # ----------------------------
-def load_frames(folder: Path) -> List[Image.Image]:
+def load_frames(folder: Path, target_size: tuple) -> List[Image.Image]:
     if not folder.exists():
         return []
     frames = []
@@ -108,6 +108,8 @@ def load_frames(folder: Path) -> List[Image.Image]:
     for fp in sorted(folder.glob("*.png")):
         try:
             img = Image.open(fp).convert("RGB")
+            if img.size != target_size:
+                img = img.resize(target_size, Image.Resampling.LANCZOS)
             frames.append(img)
         except Exception as e:
             print(f"Error loading {fp}: {e}")
@@ -116,6 +118,8 @@ def load_frames(folder: Path) -> List[Image.Image]:
 class PiLCDApp:
     def __init__(self):
         global HARDWARE_AVAILABLE
+        self.target_size = (128, 128) # ST7735 Resolution
+        
         self.lcd = None
         if HARDWARE_AVAILABLE:
             try:
@@ -129,7 +133,7 @@ class PiLCDApp:
             # Init simulator
             if 'TkinterDisplay' in globals():
                 # Pass handle_command as callback
-                self.lcd = TkinterDisplay(width=128, height=128, on_command=self.handle_command)
+                self.lcd = TkinterDisplay(width=self.target_size[0], height=self.target_size[1], on_command=self.handle_command)
                 print("Simulation LCD Initialized.")
         
         self.running = True
@@ -137,11 +141,11 @@ class PiLCDApp:
         self.anim_queue = [] # (name, loop, fps, fallback)
         
         # Load Assets
-        print("Loading assets...")
+        print(f"Loading assets (target size {self.target_size})...")
         self.anims: Dict[str, List[Image.Image]] = {}
         for folder in ASSETS_DIR.iterdir():
             if folder.is_dir():
-                self.anims[folder.name] = load_frames(folder)
+                self.anims[folder.name] = load_frames(folder, self.target_size)
                 print(f"Loaded {folder.name}: {len(self.anims[folder.name])} frames")
                 
         # State
