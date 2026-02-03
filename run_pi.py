@@ -8,7 +8,7 @@ from PIL import Image
 
 # Import the hardware driver
 try:
-    from lcd_driver_pi import LCD_GC9A01
+    from lcd_driver_pi import LCD_ST7735
     HARDWARE_AVAILABLE = True
 except ImportError:
     print("Raspberry Pi hardware driver not found. Using Tkinter simulation.")
@@ -22,7 +22,7 @@ except ImportError:
 
 class TkinterDisplay:
     """Simulates the SPI Display using a Tkinter window"""
-    def __init__(self, width=240, height=240, on_command=None):
+    def __init__(self, width=128, height=128, on_command=None):
         if not tk:
             self.root = None
             return
@@ -119,7 +119,7 @@ class PiLCDApp:
         self.lcd = None
         if HARDWARE_AVAILABLE:
             try:
-                self.lcd = LCD_GC9A01()
+                self.lcd = LCD_ST7735()
                 print("Hardware LCD Initialized.")
             except Exception as e:
                 print(f"Failed to init Hardware LCD: {e}")
@@ -129,7 +129,7 @@ class PiLCDApp:
             # Init simulator
             if 'TkinterDisplay' in globals():
                 # Pass handle_command as callback
-                self.lcd = TkinterDisplay(on_command=self.handle_command)
+                self.lcd = TkinterDisplay(width=128, height=128, on_command=self.handle_command)
                 print("Simulation LCD Initialized.")
         
         self.running = True
