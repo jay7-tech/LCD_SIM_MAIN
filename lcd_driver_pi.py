@@ -17,7 +17,7 @@ SPI_DEVICE = 0
 SPI_SPEED_HZ = 40000000 # ST7735 usually handles up to ~30-40MHz
 
 class LCD_ST7735:
-    def __init__(self, width=128, height=128, rotation=90):
+    def __init__(self, width=162, height=132, rotation=90):
         self.width = width
         self.height = height
         self.rotation = rotation
