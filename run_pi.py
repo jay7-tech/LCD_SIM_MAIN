@@ -123,7 +123,7 @@ class PiLCDApp:
         self.lcd = None
         if HARDWARE_AVAILABLE:
             try:
-                self.lcd = LCD_ST7735(rotation=270)
+                self.lcd = LCD_ST7735(rotation=90)
                 print("Hardware LCD Initialized.")
             except Exception as e:
                 print(f"Failed to init Hardware LCD: {e}")
