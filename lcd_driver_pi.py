@@ -83,22 +83,10 @@ class LCD_ST7735:
         self.write_data(0x05) 
         
         # MADCTL - Memory Access Control
-        # D7=MY, D6=MX, D5=MV, D4=ML, D3=RGB, D2=MH
-        # 0:   0xC8 (MY=1, MX=1, BGR=1)
-        # 90:  0xA8 (MY=1, MV=1, BGR=1) 
-        # 180: 0x08 (MY=0, MX=0, BGR=1)
-        # 270: 0x68 (MX=1, MV=1, BGR=1) 
-        
-        madctl_values = {
-            0: 0xC8,
-            90: 0xA8,
-            180: 0x08,
-            270: 0x68
-        }
-        val = madctl_values.get(self.rotation, 0xC8)
-        
+        # Standard: BGR (0x08) or MV/MX/MY variants. 
+        # We use standard 0x08 (BGR) and rely on software rotation.
         self.write_cmd(0x36)
-        self.write_data(val)
+        self.write_data(0xC8) # default
         
         # GAMSET (Gamma) - Default curve 1
         self.write_cmd(0x26)
@@ -131,6 +119,10 @@ class LCD_ST7735:
         if image.mode != "RGB":
             image = image.convert("RGB")
         
+        # Software Rotation
+        if self.rotation != 0:
+            image = image.rotate(self.rotation)
+
         if image.size != (self.width, self.height):
             image = image.resize((self.width, self.height))
             
