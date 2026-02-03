@@ -22,27 +22,46 @@ except ImportError:
 
 class TkinterDisplay:
     """Simulates the SPI Display using a Tkinter window"""
-    def __init__(self, width=240, height=240):
+    def __init__(self, width=240, height=240, on_command=None):
         if not tk:
             self.root = None
             return
             
         self.root = tk.Tk()
         self.root.title("Pi LCD Simulator")
+        
+        # Main Layout
+        container = tk.Frame(self.root)
+        container.pack(fill="both", expand=True)
+        
+        # LCD Area
         self.width = width
         self.height = height
+        self.canvas = tk.Canvas(container, width=width, height=height, bg="black", highlightthickness=0)
+        self.canvas.pack(side="left", padx=10, pady=10)
         
+        # Controls Area
+        if on_command:
+            controls = tk.Frame(container)
+            controls.pack(side="right", fill="y", padx=10, pady=10)
+            
+            tk.Label(controls, text="Triggers", font=("Arial", 10, "bold")).pack(pady=(0, 5))
+            
+            cmds = ["Happy", "Sleep", "Love", "Angry", "Blush", "Focus", "Phone", "Silence"]
+            for cmd in cmds:
+                btn = tk.Button(controls, text=cmd, width=10, 
+                                command=lambda c=cmd.lower(): on_command(c))
+                btn.pack(pady=2)
+                
+            tk.Button(controls, text="Quit", width=10, bg="#ffcccc",
+                      command=lambda: on_command("quit")).pack(pady=(10, 0))
+
         # Position window
-        self.root.geometry(f"{width}x{height}")
         self.root.resizable(False, False)
-        
-        self.canvas = tk.Canvas(self.root, width=width, height=height, bg="black", highlightthickness=0)
-        self.canvas.pack()
         
         self.tk_img_ref = None
         
-        # Start GUI update loop in a way that doesn't block the main thread too much
-        # effectively we just update root manually
+        # Start GUI update loop
         self.root.update()
 
     def display_image(self, image):
@@ -109,7 +128,8 @@ class PiLCDApp:
         if not HARDWARE_AVAILABLE:
             # Init simulator
             if 'TkinterDisplay' in globals():
-                self.lcd = TkinterDisplay()
+                # Pass handle_command as callback
+                self.lcd = TkinterDisplay(on_command=self.handle_command)
                 print("Simulation LCD Initialized.")
         
         self.running = True
