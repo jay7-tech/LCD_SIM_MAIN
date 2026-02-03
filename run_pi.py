@@ -116,15 +116,15 @@ def load_frames(folder: Path, target_size: tuple) -> List[Image.Image]:
     return frames
 
 class PiLCDApp:
-    def __init__(self):
+    def __init__(self, initial_rotation=90):
         global HARDWARE_AVAILABLE
         self.target_size = (128, 128) # ST7735 Resolution
         
         self.lcd = None
         if HARDWARE_AVAILABLE:
             try:
-                self.lcd = LCD_ST7735(rotation=90)
-                print("Hardware LCD Initialized.")
+                self.lcd = LCD_ST7735(rotation=initial_rotation)
+                print(f"Hardware LCD Initialized (Rotation: {initial_rotation}).")
             except Exception as e:
                 print(f"Failed to init Hardware LCD: {e}")
                 HARDWARE_AVAILABLE = False # Fallback
@@ -279,5 +279,10 @@ class PiLCDApp:
                 self.lcd.close()
 
 if __name__ == "__main__":
-    app = PiLCDApp()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rot", type=int, default=90, help="Rotation: 0, 90, 180, 270")
+    args = parser.parse_args()
+    
+    app = PiLCDApp(initial_rotation=args.rot)
     app.run()
