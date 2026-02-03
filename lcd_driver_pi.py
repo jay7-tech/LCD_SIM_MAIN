@@ -17,9 +17,10 @@ SPI_DEVICE = 0
 SPI_SPEED_HZ = 40000000 # ST7735 usually handles up to ~30-40MHz
 
 class LCD_ST7735:
-    def __init__(self, width=128, height=128):
+    def __init__(self, width=128, height=128, rotation=90):
         self.width = width
         self.height = height
+        self.rotation = rotation
         
         # ST7735 1.44" often has an offset because the controller is 132x162
         # Adjust these if the image is shifted
@@ -82,21 +83,27 @@ class LCD_ST7735:
         self.write_data(0x05) 
         
         # MADCTL - Memory Access Control
-        # MY=0, MX=0, MV=0, ML=0, RGB=1 (BGR), MH=0
-        # 0xC0 = MY=1, MX=1 (Rotate 180)
-        # 0xA0 = MY=1, MX=0, MV=1 (Rotate 270)
-        # 0x08 = BGR
+        # D7=MY, D6=MX, D5=MV, D4=ML, D3=RGB, D2=MH
+        # 0:   0xC8 (MY=1, MX=1, BGR=1)
+        # 90:  0xA8 (MY=1, MV=1, BGR=1) 
+        # 180: 0x08 (MY=0, MX=0, BGR=1)
+        # 270: 0x68 (MX=1, MV=1, BGR=1) 
+        
+        madctl_values = {
+            0: 0xC8,
+            90: 0xA8,
+            180: 0x08,
+            270: 0x68
+        }
+        val = madctl_values.get(self.rotation, 0xC8)
+        
         self.write_cmd(0x36)
-        self.write_data(0xC8) # Mirror Y + BGR (Adjust based on mounting)
+        self.write_data(val)
         
         # GAMSET (Gamma) - Default curve 1
         self.write_cmd(0x26)
         self.write_data(0x01)
         
-        # FRMCTR1 (Frame Rate Control) - optional, default often works
-        # self.write_cmd(0xB1)
-        # self.write_data([0x01, 0x2C, 0x2D]) 
-
         # DISPON
         self.write_cmd(0x29)
         time.sleep(0.100)
