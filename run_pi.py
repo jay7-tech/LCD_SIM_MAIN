@@ -11,8 +11,61 @@ try:
     from lcd_driver_pi import LCD_GC9A01
     HARDWARE_AVAILABLE = True
 except ImportError:
-    print("Hardware driver not found or dependencies missing (lgpio/spidev). Running in mock mode.")
+    print("Raspberry Pi hardware driver not found. Using Tkinter simulation.")
     HARDWARE_AVAILABLE = False
+    try:
+        import tkinter as tk
+        from PIL import ImageTk
+    except ImportError:
+        print("Tkinter not found. Running in headless console mode.")
+        tk = None
+
+class TkinterDisplay:
+    """Simulates the SPI Display using a Tkinter window"""
+    def __init__(self, width=240, height=240):
+        if not tk:
+            self.root = None
+            return
+            
+        self.root = tk.Tk()
+        self.root.title("Pi LCD Simulator")
+        self.width = width
+        self.height = height
+        
+        # Position window
+        self.root.geometry(f"{width}x{height}")
+        self.root.resizable(False, False)
+        
+        self.canvas = tk.Canvas(self.root, width=width, height=height, bg="black", highlightthickness=0)
+        self.canvas.pack()
+        
+        self.tk_img_ref = None
+        
+        # Start GUI update loop in a way that doesn't block the main thread too much
+        # effectively we just update root manually
+        self.root.update()
+
+    def display_image(self, image):
+        if not self.root: return
+        
+        # Resize if needed
+        if image.size != (self.width, self.height):
+            image = image.resize((self.width, self.height))
+            
+        self.tk_img_ref = ImageTk.PhotoImage(image)
+        self.canvas.create_image(0, 0, image=self.tk_img_ref, anchor="nw")
+        
+        # Handle GUI events
+        try:
+            self.root.update_idletasks()
+            self.root.update()
+        except tk.TclError:
+            pass # Window closed
+
+    def close(self):
+        if self.root:
+            self.root.destroy()
+            self.root = None
     
 # ----------------------------
 # Configuration
@@ -38,13 +91,21 @@ def load_frames(folder: Path) -> List[Image.Image]:
 
 class PiLCDApp:
     def __init__(self):
+        global HARDWARE_AVAILABLE
         self.lcd = None
         if HARDWARE_AVAILABLE:
             try:
                 self.lcd = LCD_GC9A01()
-                print("LCD Initialized.")
+                print("Hardware LCD Initialized.")
             except Exception as e:
-                print(f"Failed to init LCD: {e}")
+                print(f"Failed to init Hardware LCD: {e}")
+                HARDWARE_AVAILABLE = False # Fallback
+        
+        if not HARDWARE_AVAILABLE:
+            # Init simulator
+            if 'TkinterDisplay' in globals():
+                self.lcd = TkinterDisplay()
+                print("Simulation LCD Initialized.")
         
         self.running = True
         self.current_anim_name = "idle_center"
